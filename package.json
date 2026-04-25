@@ -1,5 +1,6 @@
 {
   "name": "ssm-parameter-bridge",
+  "description": "Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store parameters in AWS CDK v2, with a consistent tagging convention.",
   "repository": {
     "type": "git",
     "url": "https://github.com/gammarers-aws-cdk-bridges/ssm-parameter-bridge.git"

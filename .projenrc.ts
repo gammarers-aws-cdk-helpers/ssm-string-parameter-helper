@@ -7,6 +7,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   typescriptVersion: '5.9.x',
   jsiiVersion: '5.9.x',
   name: 'ssm-parameter-bridge',
+  description: 'Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store parameters in AWS CDK v2, with a consistent tagging convention.',
   packageManager: javascript.NodePackageManager.YARN_CLASSIC,
   projenrcTs: true,
   repositoryUrl: 'https://github.com/gammarers-aws-cdk-bridges/ssm-parameter-bridge.git',
