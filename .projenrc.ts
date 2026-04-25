@@ -1,8 +1,9 @@
-import { cdk, javascript, github } from 'projen';
-const project = new cdk.JsiiProject({
+import { awscdk, javascript, github } from 'projen';
+const project = new awscdk.AwsCdkConstructLibrary({
   author: 'yicr',
   authorAddress: 'yicr@users.noreply.github.com',
   defaultReleaseBranch: 'main',
+  cdkVersion: '2.232.0',
   typescriptVersion: '5.9.x',
   jsiiVersion: '5.9.x',
   name: 'ssm-parameter-bridge',
