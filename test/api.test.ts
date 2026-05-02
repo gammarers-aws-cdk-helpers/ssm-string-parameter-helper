@@ -3,35 +3,35 @@ import { Fn } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import {
-  readStringListParameter,
-  readStringParameter,
-  splitTokenListToStrings,
-  writeStringListParameter,
-  writeStringParameter,
+  readFromStringListParameter,
+  readFromStringParameter,
+  splitListTokenToStrings,
+  writeToStringListParameter,
+  writeToStringParameter,
 } from '../src';
 
 describe('public api exports', () => {
   test('exports exist', () => {
-    expect(typeof writeStringParameter).toBe('function');
-    expect(typeof writeStringListParameter).toBe('function');
-    expect(typeof readStringParameter).toBe('function');
-    expect(typeof readStringListParameter).toBe('function');
-    expect(typeof splitTokenListToStrings).toBe('function');
+    expect(typeof writeToStringParameter).toBe('function');
+    expect(typeof writeToStringListParameter).toBe('function');
+    expect(typeof readFromStringParameter).toBe('function');
+    expect(typeof readFromStringListParameter).toBe('function');
+    expect(typeof splitListTokenToStrings).toBe('function');
   });
 });
 
-describe('splitTokenListToStrings', () => {
+describe('splitListTokenToStrings', () => {
   test('throws when length is not an integer >= 0', () => {
-    expect(() => splitTokenListToStrings(['a'], -1)).toThrow(/length must be an integer >= 0/);
-    expect(() => splitTokenListToStrings(['a'], 1.1)).toThrow(/length must be an integer >= 0/);
+    expect(() => splitListTokenToStrings(['a'], -1)).toThrow(/length must be an integer >= 0/);
+    expect(() => splitListTokenToStrings(['a'], 1.1)).toThrow(/length must be an integer >= 0/);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(() => splitTokenListToStrings(['a'], NaN as any)).toThrow(/length must be an integer >= 0/);
+    expect(() => splitListTokenToStrings(['a'], NaN as any)).toThrow(/length must be an integer >= 0/);
   });
 
   test('returns empty array when length is 0', () => {
     const selectSpy = jest.spyOn(Fn, 'select');
     try {
-      expect(splitTokenListToStrings(['x', 'y'], 0)).toEqual([]);
+      expect(splitListTokenToStrings(['x', 'y'], 0)).toEqual([]);
       expect(selectSpy).not.toHaveBeenCalled();
     } finally {
       selectSpy.mockRestore();
@@ -45,7 +45,7 @@ describe('splitTokenListToStrings', () => {
     }) as unknown as typeof Fn.select);
 
     try {
-      expect(splitTokenListToStrings(listToken, 3)).toEqual([
+      expect(splitListTokenToStrings(listToken, 3)).toEqual([
         'selected:0:token-list',
         'selected:1:token-list',
         'selected:2:token-list',
@@ -61,12 +61,12 @@ describe('splitTokenListToStrings', () => {
   });
 });
 
-describe('writeStringParameter / writeStringListParameter', () => {
+describe('writeToStringParameter / writeToStringListParameter', () => {
   test('adds managed-by tag and custom tags', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'TestStack');
 
-    writeStringParameter(stack, 'Param1', {
+    writeToStringParameter(stack, 'Param1', {
       parameterName: '/test/string',
       stringValue: 'value',
       tags: {
@@ -74,7 +74,7 @@ describe('writeStringParameter / writeStringListParameter', () => {
       },
     });
 
-    writeStringListParameter(stack, 'Param2', {
+    writeToStringListParameter(stack, 'Param2', {
       parameterName: '/test/list',
       stringListValue: ['a', 'b'],
       tags: {
@@ -109,7 +109,7 @@ describe('writeStringParameter / writeStringListParameter', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'TierStack');
 
-    writeStringParameter(stack, 'Param', {
+    writeToStringParameter(stack, 'Param', {
       parameterName: '/test/tier',
       stringValue: 'value',
     });
@@ -121,16 +121,15 @@ describe('writeStringParameter / writeStringListParameter', () => {
   });
 });
 
-describe('read helpers', () => {
+describe('readFromStringParameter / readFromStringListParameter', () => {
   test('can be invoked in a CDK stack context', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'ReadStack');
 
-    const typed = readStringParameter(stack, '/typed', ssm.ParameterValueType.STRING);
-    const typedList = readStringListParameter(stack, '/typedList', ssm.ParameterValueType.STRING);
+    const typed = readFromStringParameter(stack, '/typed', ssm.ParameterValueType.STRING);
+    const typedList = readFromStringListParameter(stack, '/typedList', ssm.ParameterValueType.STRING);
 
     expect(typeof typed).toBe('string');
     expect(Array.isArray(typedList)).toBe(true);
   });
 });
-
