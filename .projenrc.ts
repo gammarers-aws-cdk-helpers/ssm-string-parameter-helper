@@ -12,7 +12,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   projenrcTs: true,
   repositoryUrl: 'https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper.git',
   releaseToNpm: true,
-  npmTrustedPublishing: true,
+  npmTrustedPublishing: false,
   npmAccess: javascript.NpmAccess.PUBLIC,
   mergify: true,
   minNodeVersion: '20.0.0',
