@@ -1,5 +1,5 @@
 {
-  "name": "dev-aws-ssm-parameter-bridge",
+  "name": "dev-aws-ssm-string-parameter-helper",
   "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
