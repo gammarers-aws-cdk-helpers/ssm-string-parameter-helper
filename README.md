@@ -1,7 +1,7 @@
-# ssm-parameter-bridge
+# SSM String Parameter Helper
 
-[![npm](https://img.shields.io/npm/v/ssm-parameter-bridge.svg)](https://www.npmjs.com/package/ssm-parameter-bridge)
-[![build](https://github.com/gammarers-aws-cdk-bridges/ssm-parameter-bridge/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gammarers-aws-cdk-bridges/ssm-parameter-bridge/actions/workflows/build.yml)
+[![npm](https://img.shields.io/npm/v/ssm-string-parameter-helper.svg)](https://www.npmjs.com/package/ssm-string-parameter-helper)
+[![build](https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/actions/workflows/build.yml)
 [![license: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store parameters in AWS CDK v2, with a consistent tagging convention. The public API uses **`readFrom*Parameter` / `writeTo*Parameter`** naming.
@@ -20,13 +20,13 @@ Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store 
 Using npm:
 
 ```bash
-npm install ssm-parameter-bridge
+npm install ssm-string-parameter-helper
 ```
 
 Using yarn:
 
 ```bash
-yarn add ssm-parameter-bridge
+yarn add ssm-string-parameter-helper
 ```
 
 ## Usage
@@ -40,7 +40,7 @@ import {
   splitListTokenToStrings,
   writeToStringListParameter,
   writeToStringParameter,
-} from 'ssm-parameter-bridge';
+} from 'ssm-string-parameter-helper';
 
 const stack = new Stack();
 
