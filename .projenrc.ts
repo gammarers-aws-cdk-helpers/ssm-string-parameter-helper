@@ -14,7 +14,6 @@ const project = new awscdk.AwsCdkConstructLibrary({
   releaseToNpm: true,
   npmTrustedPublishing: false,
   npmAccess: javascript.NpmAccess.PUBLIC,
-  mergify: true,
   minNodeVersion: '20.0.0',
   workflowNodeVersion: '24.x',
   depsUpgradeOptions: {
@@ -24,6 +23,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     },
   },
   githubOptions: {
+    mergify: false,
     projenCredentials: github.GithubCredentials.fromApp({
       permissions: {
         pullRequests: github.workflows.AppPermission.WRITE,
