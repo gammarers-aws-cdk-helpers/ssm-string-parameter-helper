@@ -5,7 +5,7 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { SsmParameterHelper } from '../src';
 
 describe('public api exports', () => {
-  test('exposes static helpers on SsmParameterHelper', () => {
+  test('should expose static helpers on SsmParameterHelper', () => {
     expect(typeof SsmParameterHelper.readFromStringParameter).toBe('function');
     expect(typeof SsmParameterHelper.readFromStringListParameter).toBe('function');
     expect(typeof SsmParameterHelper.writeToStringParameter).toBe('function');
@@ -16,14 +16,14 @@ describe('public api exports', () => {
 });
 
 describe('SsmParameterHelper.splitListTokenToStrings', () => {
-  test('throws when length is not an integer >= 0', () => {
+  test('should throw when length is not an integer >= 0', () => {
     expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], -1)).toThrow(/length must be an integer >= 0/);
     expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], 1.1)).toThrow(/length must be an integer >= 0/);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], NaN as any)).toThrow(/length must be an integer >= 0/);
   });
 
-  test('returns empty array when length is 0', () => {
+  test('should return empty array when length is 0', () => {
     const selectSpy = jest.spyOn(Fn, 'select');
     try {
       expect(SsmParameterHelper.splitListTokenToStrings(['x', 'y'], 0)).toEqual([]);
@@ -33,7 +33,7 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
     }
   });
 
-  test('selects each index with Fn.select', () => {
+  test('should select each index with Fn.select', () => {
     const listToken = ['token-list'];
     const selectSpy = jest.spyOn(Fn, 'select').mockImplementation(((index: number, list: string[]) => {
       return `selected:${index}:${list[0]}`;
@@ -57,7 +57,7 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
 });
 
 describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter', () => {
-  test('adds managed-by tag and custom tags', () => {
+  test('should add managed-by tag and custom tags', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'TestStack');
 
@@ -100,7 +100,71 @@ describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter
     });
   });
 
-  test('defaults tier to STANDARD for String parameter', () => {
+  test('should apply only managed-by tag when tags are omitted', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'NoTagsStack');
+
+    SsmParameterHelper.writeToStringParameter(stack, 'ParamString', {
+      parameterName: '/test/string-no-tags',
+      stringValue: 'value',
+    });
+
+    SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
+      parameterName: '/test/list-no-tags',
+      stringListValue: ['a', 'b'],
+    });
+
+    const template = Template.fromStack(stack);
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/string-no-tags',
+      Type: 'String',
+      Tags: {
+        'ssm:managed-by': 'ssm-string-parameter-helper',
+      },
+    });
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/list-no-tags',
+      Type: 'StringList',
+      Tags: {
+        'ssm:managed-by': 'ssm-string-parameter-helper',
+      },
+    });
+  });
+
+  test('should set description on String and StringList parameters', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'DescriptionStack');
+
+    SsmParameterHelper.writeToStringParameter(stack, 'ParamString', {
+      parameterName: '/test/string-desc',
+      stringValue: 'value',
+      description: 'string parameter description',
+    });
+
+    SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
+      parameterName: '/test/list-desc',
+      stringListValue: ['a', 'b'],
+      description: 'list parameter description',
+    });
+
+    const template = Template.fromStack(stack);
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/string-desc',
+      Type: 'String',
+      Description: 'string parameter description',
+    });
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/list-desc',
+      Type: 'StringList',
+      Description: 'list parameter description',
+    });
+  });
+
+  test('should default tier to STANDARD for String parameter', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'TierStack');
 
@@ -114,10 +178,26 @@ describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter
       Tier: 'Standard',
     });
   });
+
+  test('should use custom tier for String parameter', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'CustomTierStack');
+
+    SsmParameterHelper.writeToStringParameter(stack, 'Param', {
+      parameterName: '/test/custom-tier',
+      stringValue: 'value',
+      tier: ssm.ParameterTier.ADVANCED,
+    });
+
+    Template.fromStack(stack).hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/custom-tier',
+      Tier: 'Advanced',
+    });
+  });
 });
 
 describe('SsmParameterHelper.readFromStringParameter / readFromStringListParameter', () => {
-  test('can be invoked in a CDK stack context', () => {
+  test('should be invokable in a CDK stack context', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'ReadStack');
 
