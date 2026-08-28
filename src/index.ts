@@ -47,6 +47,10 @@ export interface WriteToStringListParameterProps {
    */
   readonly description?: string;
   /**
+   * Optional SSM parameter tier. Defaults to `STANDARD`.
+   */
+  readonly tier?: ssm.ParameterTier;
+  /**
    * Optional additional tags to apply.
    */
   readonly tags?: Record<string, string>;
@@ -134,6 +138,7 @@ export class SsmParameterHelper {
       parameterName: props.parameterName,
       stringListValue: props.stringListValue,
       description: props.description,
+      tier: props.tier ?? ssm.ParameterTier.STANDARD,
     });
 
     Tags.of(param).add('ssm:managed-by', MANAGED_BY_TAG_VALUE);

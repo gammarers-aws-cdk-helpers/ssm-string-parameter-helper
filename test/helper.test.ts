@@ -164,33 +164,62 @@ describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter
     });
   });
 
-  test('should default tier to STANDARD for String parameter', () => {
+  test('should default tier to STANDARD for String and StringList parameters', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'TierStack');
 
-    SsmParameterHelper.writeToStringParameter(stack, 'Param', {
+    SsmParameterHelper.writeToStringParameter(stack, 'ParamString', {
       parameterName: '/test/tier',
       stringValue: 'value',
     });
 
-    Template.fromStack(stack).hasResourceProperties('AWS::SSM::Parameter', {
+    SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
+      parameterName: '/test/list-tier',
+      stringListValue: ['a', 'b'],
+    });
+
+    const template = Template.fromStack(stack);
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
       Name: '/test/tier',
+      Type: 'String',
+      Tier: 'Standard',
+    });
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/list-tier',
+      Type: 'StringList',
       Tier: 'Standard',
     });
   });
 
-  test('should use custom tier for String parameter', () => {
+  test('should use custom tier for String and StringList parameters', () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, 'CustomTierStack');
 
-    SsmParameterHelper.writeToStringParameter(stack, 'Param', {
+    SsmParameterHelper.writeToStringParameter(stack, 'ParamString', {
       parameterName: '/test/custom-tier',
       stringValue: 'value',
       tier: ssm.ParameterTier.ADVANCED,
     });
 
-    Template.fromStack(stack).hasResourceProperties('AWS::SSM::Parameter', {
+    SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
+      parameterName: '/test/list-custom-tier',
+      stringListValue: ['a', 'b'],
+      tier: ssm.ParameterTier.ADVANCED,
+    });
+
+    const template = Template.fromStack(stack);
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
       Name: '/test/custom-tier',
+      Type: 'String',
+      Tier: 'Advanced',
+    });
+
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/list-custom-tier',
+      Type: 'StringList',
       Tier: 'Advanced',
     });
   });
