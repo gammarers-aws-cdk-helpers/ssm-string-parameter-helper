@@ -15,6 +15,13 @@ Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store 
 - Apply a default `ssm:managed-by=ssm-string-parameter-helper` tag on created parameters, plus optional custom tags
 - Expand a `StringList` token into a fixed-length CloudFormation `string[]` with `SsmParameterHelper.splitListTokenToStrings`
 
+This helper covers **String** and **StringList** only. See [Limitations](#limitations) for out-of-scope APIs.
+
+## Limitations
+
+- **SecureString is not supported.** Do not use this helper to read or write `SecureString` parameters. Use `aws-cdk-lib/aws-ssm` (or Secrets Manager) directly.
+- **Synth-time lookup is not supported.** There is no wrapper for `StringParameter.valueFromLookup` (or other context lookups that resolve during `cdk synth`). Reads use CloudFormation dynamic references and are resolved at **deploy** time; the return value may be a CDK token and is not a concrete string at synthesis.
+
 ## Installation
 
 Using npm:
@@ -60,6 +67,7 @@ SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
   parameterName: '/my/app/list',
   stringListValue: ['a', 'b'],
   description: 'application list',
+  tier: ssm.ParameterTier.STANDARD,
   tags: { team: 'platform' },
 });
 ```
@@ -98,6 +106,7 @@ SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
 - `props.parameterName` (required): parameter name (for example, `/my/app/list`)
 - `props.stringListValue` (required): list of strings
 - `props.description` (optional): parameter description
+- `props.tier` (optional): SSM parameter tier (defaults to `STANDARD`)
 - `props.tags` (optional): additional tags to apply (in addition to `ssm:managed-by=ssm-string-parameter-helper`)
 - returns: the created `ssm.StringListParameter`
 

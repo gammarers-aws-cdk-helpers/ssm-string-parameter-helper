@@ -23,6 +23,7 @@ const writeToStringListParameterProps: WriteToStringListParameterProps = { ... }
 | <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.stringListValue">stringListValue</a></code> | <code>string[]</code> | Parameter values. |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.description">description</a></code> | <code>string</code> | Optional parameter description. |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.tags">tags</a></code> | <code>{[ key: string ]: string}</code> | Optional additional tags to apply. |
+| <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.tier">tier</a></code> | <code>aws-cdk-lib.aws_ssm.ParameterTier</code> | Optional SSM parameter tier. |
 
 ---
 
@@ -71,6 +72,20 @@ public readonly tags: {[ key: string ]: string};
 - *Type:* {[ key: string ]: string}
 
 Optional additional tags to apply.
+
+---
+
+##### `tier`<sup>Optional</sup> <a name="tier" id="ssm-string-parameter-helper.WriteToStringListParameterProps.property.tier"></a>
+
+```typescript
+public readonly tier: ParameterTier;
+```
+
+- *Type:* aws-cdk-lib.aws_ssm.ParameterTier
+
+Optional SSM parameter tier.
+
+Defaults to `STANDARD`.
 
 ---
 
