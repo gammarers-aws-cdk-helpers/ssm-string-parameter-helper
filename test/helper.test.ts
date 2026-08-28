@@ -196,15 +196,122 @@ describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter
   });
 });
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+/**
+ * Locate the CloudFormation SSM value parameter that CDK emits for a typed lookup.
+ * Typed reads synthesize `AWS::SSM::Parameter::Value<T>` (not `{{resolve:ssm:name}}`,
+ * which CDK uses for versioned or tokenized names).
+ */
+const findSsmLookupParameter = (
+  templateJson: unknown,
+  parameterName: string,
+): { logicalId: string; type: string } => {
+  if (!isRecord(templateJson) || !isRecord(templateJson.Parameters)) {
+    throw new Error('template has no Parameters');
+  }
+
+  const matches: Array<{ logicalId: string; type: string }> = [];
+  for (const [logicalId, spec] of Object.entries(templateJson.Parameters)) {
+    if (!isRecord(spec)) {
+      continue;
+    }
+    if (spec.Default !== parameterName || typeof spec.Type !== 'string') {
+      continue;
+    }
+    matches.push({ logicalId, type: spec.Type });
+  }
+
+  if (matches.length !== 1) {
+    throw new Error(`expected 1 SSM lookup parameter for ${parameterName}, found ${matches.length}`);
+  }
+  return matches[0];
+};
+
 describe('SsmParameterHelper.readFromStringParameter / readFromStringListParameter', () => {
-  test('should be invokable in a CDK stack context', () => {
+  test('should synthesize an SSM string lookup as AWS::SSM::Parameter::Value<String>', () => {
     const app = new cdk.App();
-    const stack = new cdk.Stack(app, 'ReadStack');
+    const stack = new cdk.Stack(app, 'ReadStringStack');
 
-    const typed = SsmParameterHelper.readFromStringParameter(stack, '/typed', ssm.ParameterValueType.STRING);
-    const typedList = SsmParameterHelper.readFromStringListParameter(stack, '/typedList', ssm.ParameterValueType.STRING);
+    const value = SsmParameterHelper.readFromStringParameter(stack, '/my/app/value');
+    new cdk.CfnOutput(stack, 'StringValue', { value });
 
-    expect(typeof typed).toBe('string');
-    expect(Array.isArray(typedList)).toBe(true);
+    expect(typeof value).toBe('string');
+    expect(cdk.Token.isUnresolved(value)).toBe(true);
+
+    const template = Template.fromStack(stack);
+    const lookup = findSsmLookupParameter(template.toJSON(), '/my/app/value');
+    expect(lookup.type).toBe('AWS::SSM::Parameter::Value<String>');
+    expect(stack.resolve(value)).toEqual({ Ref: lookup.logicalId });
+    template.hasOutput('StringValue', {
+      Value: { Ref: lookup.logicalId },
+    });
+  });
+
+  test.each([
+    [ssm.ParameterValueType.STRING, 'AWS::SSM::Parameter::Value<String>'],
+    [ssm.ParameterValueType.AWS_EC2_IMAGE_ID, 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'],
+    [ssm.ParameterValueType.AWS_EC2_SUBNET_ID, 'AWS::SSM::Parameter::Value<AWS::EC2::Subnet::Id>'],
+  ] as const)('should reflect ParameterValueType %s on the string lookup template', (valueType, expectedCfnType) => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'ReadTypedStringStack');
+    const parameterName = '/typed/string';
+
+    const value = SsmParameterHelper.readFromStringParameter(stack, parameterName, valueType);
+    new cdk.CfnOutput(stack, 'TypedStringValue', { value });
+
+    expect(typeof value).toBe('string');
+
+    const template = Template.fromStack(stack);
+    const lookup = findSsmLookupParameter(template.toJSON(), parameterName);
+    expect(lookup.type).toBe(expectedCfnType);
+    expect(stack.resolve(value)).toEqual({ Ref: lookup.logicalId });
+    template.hasOutput('TypedStringValue', {
+      Value: { Ref: lookup.logicalId },
+    });
+  });
+
+  test('should synthesize an SSM string list lookup as AWS::SSM::Parameter::Value<List<String>>', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'ReadListStack');
+
+    const values = SsmParameterHelper.readFromStringListParameter(stack, '/my/app/list');
+    new cdk.CfnOutput(stack, 'ListValue', { value: Fn.join(',', values) });
+
+    expect(Array.isArray(values)).toBe(true);
+    expect(cdk.Token.isUnresolved(values)).toBe(true);
+
+    const template = Template.fromStack(stack);
+    const lookup = findSsmLookupParameter(template.toJSON(), '/my/app/list');
+    expect(lookup.type).toBe('AWS::SSM::Parameter::Value<List<String>>');
+    expect(stack.resolve(values)).toEqual({ Ref: lookup.logicalId });
+    template.hasOutput('ListValue', {
+      Value: { 'Fn::Join': [',', { Ref: lookup.logicalId }] },
+    });
+  });
+
+  test.each([
+    [ssm.ParameterValueType.STRING, 'AWS::SSM::Parameter::Value<List<String>>'],
+    [ssm.ParameterValueType.AWS_EC2_IMAGE_ID, 'AWS::SSM::Parameter::Value<List<AWS::EC2::Image::Id>>'],
+    [ssm.ParameterValueType.AWS_EC2_SUBNET_ID, 'AWS::SSM::Parameter::Value<List<AWS::EC2::Subnet::Id>>'],
+  ] as const)('should reflect ParameterValueType %s on the string list lookup template', (valueType, expectedCfnType) => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'ReadTypedListStack');
+    const parameterName = '/typed/list';
+
+    const values = SsmParameterHelper.readFromStringListParameter(stack, parameterName, valueType);
+    new cdk.CfnOutput(stack, 'TypedListValue', { value: Fn.join(',', values) });
+
+    expect(Array.isArray(values)).toBe(true);
+
+    const template = Template.fromStack(stack);
+    const lookup = findSsmLookupParameter(template.toJSON(), parameterName);
+    expect(lookup.type).toBe(expectedCfnType);
+    expect(stack.resolve(values)).toEqual({ Ref: lookup.logicalId });
+    template.hasOutput('TypedListValue', {
+      Value: { 'Fn::Join': [',', { Ref: lookup.logicalId }] },
+    });
   });
 });
