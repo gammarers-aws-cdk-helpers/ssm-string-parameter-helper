@@ -60,6 +60,7 @@ SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
   parameterName: '/my/app/list',
   stringListValue: ['a', 'b'],
   description: 'application list',
+  tier: ssm.ParameterTier.STANDARD,
   tags: { team: 'platform' },
 });
 ```
@@ -98,6 +99,7 @@ SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
 - `props.parameterName` (required): parameter name (for example, `/my/app/list`)
 - `props.stringListValue` (required): list of strings
 - `props.description` (optional): parameter description
+- `props.tier` (optional): SSM parameter tier (defaults to `STANDARD`)
 - `props.tags` (optional): additional tags to apply (in addition to `ssm:managed-by=ssm-string-parameter-helper`)
 - returns: the created `ssm.StringListParameter`
 
