@@ -27,7 +27,11 @@ export class SsmParameterHelper {
    * @param type Optional Parameter Store value type to validate at deploy time.
    * @returns A string that may be a CDK token.
    */
-  public static readFromStringParameter(scope: Construct, parameterName: string, type?: ssm.ParameterValueType): string {
+  public static readFromStringParameter(
+    scope: Construct,
+    parameterName: string,
+    type?: ssm.ParameterValueType,
+  ): string {
     return ssm.StringParameter.valueForTypedStringParameterV2(scope, parameterName, type);
   }
 
@@ -46,7 +50,11 @@ export class SsmParameterHelper {
    * @param type Optional Parameter Store value type to validate at deploy time.
    * @returns A `string[]` that may contain CDK tokens.
    */
-  public static readFromStringListParameter(scope: Construct, parameterName: string, type?: ssm.ParameterValueType): string[] {
+  public static readFromStringListParameter(
+    scope: Construct,
+    parameterName: string,
+    type?: ssm.ParameterValueType,
+  ): string[] {
     return ssm.StringListParameter.valueForTypedListParameter(scope, parameterName, type);
   }
 
@@ -61,7 +69,11 @@ export class SsmParameterHelper {
    * @param props Parameter properties.
    * @returns The created `ssm.StringParameter`.
    */
-  public static writeToStringParameter(scope: Construct, id: string, props: WriteToStringParameterProps): ssm.StringParameter {
+  public static writeToStringParameter(
+    scope: Construct,
+    id: string,
+    props: WriteToStringParameterProps,
+  ): ssm.StringParameter {
     const param = new ssm.StringParameter(scope, id, {
       parameterName: props.parameterName,
       stringValue: props.stringValue,
@@ -92,7 +104,11 @@ export class SsmParameterHelper {
    * @returns The created `ssm.StringListParameter`.
    * @throws {Error} If `stringListValue` is empty, or a resolved element contains a comma.
    */
-  public static writeToStringListParameter(scope: Construct, id: string, props: WriteToStringListParameterProps): ssm.StringListParameter {
+  public static writeToStringListParameter(
+    scope: Construct,
+    id: string,
+    props: WriteToStringListParameterProps,
+  ): ssm.StringListParameter {
     assertWritableStringListValue(props.stringListValue);
 
     const param = new ssm.StringListParameter(scope, id, {
