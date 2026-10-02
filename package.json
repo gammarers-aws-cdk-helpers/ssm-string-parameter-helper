@@ -64,7 +64,12 @@
     "constructs": "^10.5.1"
   },
   "keywords": [
-    "cdk"
+    "aws",
+    "cdk",
+    "helper",
+    "parameter",
+    "ssm",
+    "store"
   ],
   "engines": {
     "node": ">= 20.0.0"
