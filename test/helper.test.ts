@@ -19,8 +19,7 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
   test('should throw when length is not an integer >= 0', () => {
     expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], -1)).toThrow(/length must be an integer >= 0/);
     expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], 1.1)).toThrow(/length must be an integer >= 0/);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], NaN as any)).toThrow(/length must be an integer >= 0/);
+    expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], NaN)).toThrow(/length must be an integer >= 0/);
   });
 
   test('should return empty array when length is 0', () => {
@@ -221,6 +220,47 @@ describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter
       Name: '/test/list-custom-tier',
       Type: 'StringList',
       Tier: 'Advanced',
+    });
+  });
+
+  test('should throw when stringListValue is empty', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'EmptyListStack');
+
+    expect(() => SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
+      parameterName: '/test/empty-list',
+      stringListValue: [],
+    })).toThrow(/stringListValue must contain at least one value/);
+  });
+
+  test.each([
+    { stringListValue: ['a,b'], index: 0 },
+    { stringListValue: ['a', 'b,c'], index: 1 },
+  ])('should throw when a resolved element at index $index contains a comma', ({ stringListValue, index }) => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'CommaListStack');
+
+    expect(() => SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
+      parameterName: '/test/comma-list',
+      stringListValue,
+    })).toThrow(new RegExp(`stringListValue\\[${index}\\] must not contain a comma`));
+  });
+
+  test('should allow an unresolved token in stringListValue', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'TokenListStack');
+    const token = cdk.Token.asString({ Ref: 'ListItem' });
+
+    SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
+      parameterName: '/test/token-list',
+      stringListValue: ['a', token],
+    });
+
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: '/test/token-list',
+      Type: 'StringList',
+      Value: { 'Fn::Join': [',', ['a', { Ref: 'ListItem' }]] },
     });
   });
 });

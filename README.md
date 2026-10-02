@@ -1,8 +1,11 @@
-# SSM String Parameter Helper
+# SSM String Parameter Helper (CDK v2)
 
-[![npm](https://img.shields.io/npm/v/ssm-string-parameter-helper.svg)](https://www.npmjs.com/package/ssm-string-parameter-helper)
-[![build](https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/actions/workflows/build.yml)
-[![license: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/ssm-string-parameter-helper?style=flat-square)](https://www.npmjs.com/package/ssm-string-parameter-helper)
+[![license](https://img.shields.io/npm/l/ssm-string-parameter-helper?style=flat-square)](https://www.npmjs.com/package/ssm-string-parameter-helper)
+[![Node.js](https://img.shields.io/node/v/ssm-string-parameter-helper?style=flat-square)](https://www.npmjs.com/package/ssm-string-parameter-helper)
+[![build](https://img.shields.io/github/actions/workflow/status/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/build.yml?label=build&style=flat-square)](https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/actions/workflows/build.yml)
+
+[![View on Construct Hub](https://constructs.dev/badge?package=ssm-string-parameter-helper)](https://constructs.dev/packages/ssm-string-parameter-helper)
 
 Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store parameters in AWS CDK v2, with a consistent tagging convention. The public API is exposed as static methods on `SsmParameterHelper` (jsii-compatible; the class cannot be instantiated).
 
@@ -15,28 +18,53 @@ Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store 
 - Apply a default `ssm:managed-by=ssm-string-parameter-helper` tag on created parameters, plus optional custom tags
 - Expand a `StringList` token into a fixed-length CloudFormation `string[]` with `SsmParameterHelper.splitListTokenToStrings`
 
-This helper covers **String** and **StringList** only. See [Limitations](#limitations) for out-of-scope APIs.
+## How it works
 
-## Limitations
+Call a static method on `SsmParameterHelper` from a CDK stack.
 
-- **SecureString is not supported.** Do not use this helper to read or write `SecureString` parameters. Use `aws-cdk-lib/aws-ssm` (or Secrets Manager) directly.
-- **Synth-time lookup is not supported.** There is no wrapper for `StringParameter.valueFromLookup` (or other context lookups that resolve during `cdk synth`). Reads use CloudFormation dynamic references and are resolved at **deploy** time; the return value may be a CDK token and is not a concrete string at synthesis.
+Reads use CloudFormation dynamic references. The returned value may be a token and is resolved at deploy time. Pass `ssm.ParameterValueType` when deploy time should check the Parameter Store value type.
+
+Writes create an SSM parameter and always add the tag `ssm:managed-by=ssm-string-parameter-helper`. Tags in `props.tags` are applied as well. `writeToStringListParameter` stores the list as one comma-separated string. The list must contain at least one value, and a resolved value must not contain a comma. Unresolved CDK tokens are not inspected.
+
+`splitListTokenToStrings` turns a StringList token into a fixed-length `string[]`. The length must be an integer greater than or equal to 0 and known at synthesis.
+
+This helper covers **String** and **StringList** only. It does not read or write `SecureString` parameters, and it does not resolve parameter values during `cdk synth`.
 
 ## Installation
 
-Using npm:
+### npm
 
 ```bash
 npm install ssm-string-parameter-helper
 ```
 
-Using yarn:
+### yarn
 
 ```bash
 yarn add ssm-string-parameter-helper
 ```
 
+### pnpm
+
+```bash
+pnpm add ssm-string-parameter-helper
+```
+
 ## Usage
+
+```ts
+import { Stack } from 'aws-cdk-lib';
+import { SsmParameterHelper } from 'ssm-string-parameter-helper';
+
+const stack = new Stack();
+
+SsmParameterHelper.writeToStringParameter(stack, 'ParamString', {
+  parameterName: '/my/app/value',
+  stringValue: 'hello',
+});
+```
+
+### Typed reads and StringList values
 
 ```ts
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -45,23 +73,10 @@ import { SsmParameterHelper } from 'ssm-string-parameter-helper';
 
 const stack = new Stack();
 
-// Read a String parameter (optionally typed)
 const imageId = SsmParameterHelper.readFromStringParameter(stack, '/my/ami', ssm.ParameterValueType.AWS_EC2_IMAGE_ID);
 
-// Read a StringList parameter (optionally typed). May contain a token.
 const subnetsTokenList = SsmParameterHelper.readFromStringListParameter(stack, '/my/subnet-ids', ssm.ParameterValueType.STRING);
-
-// If you need a fixed-length array at CloudFormation level:
 const subnets = SsmParameterHelper.splitListTokenToStrings(subnetsTokenList, 3);
-
-// Write parameters with default + custom tags
-SsmParameterHelper.writeToStringParameter(stack, 'ParamString', {
-  parameterName: '/my/app/value',
-  stringValue: 'hello',
-  description: 'application value',
-  tier: ssm.ParameterTier.STANDARD,
-  tags: { env: 'dev' },
-});
 
 SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
   parameterName: '/my/app/list',
@@ -76,49 +91,68 @@ SsmParameterHelper.writeToStringListParameter(stack, 'ParamList', {
 
 ### `SsmParameterHelper.readFromStringParameter(scope, parameterName, type?)`
 
-- `scope`: construct scope used to bind the lookup token
-- `parameterName`: parameter name (for example, `/my/app/value`)
-- `type` (optional): `ssm.ParameterValueType` to validate at deploy time
-- returns: a `string` that may be a CDK token
+| Name | Required | Description |
+| --- | --- | --- |
+| `scope` | yes | Construct scope used to bind the lookup token. |
+| `parameterName` | yes | Parameter name (for example, `/my/app/value`). |
+| `type` | no | `ssm.ParameterValueType` validated at deploy time. |
+
+Returns a `string` that may be a CDK token.
 
 ### `SsmParameterHelper.readFromStringListParameter(scope, parameterName, type?)`
 
-- `scope`: construct scope used to bind the lookup token
-- `parameterName`: parameter name (for example, `/my/app/list`)
-- `type` (optional): `ssm.ParameterValueType` to validate at deploy time
-- returns: a `string[]` that may contain CDK tokens
+| Name | Required | Description |
+| --- | --- | --- |
+| `scope` | yes | Construct scope used to bind the lookup token. |
+| `parameterName` | yes | Parameter name (for example, `/my/app/list`). |
+| `type` | no | `ssm.ParameterValueType` validated at deploy time. |
+
+Returns a `string[]` that may contain CDK tokens.
 
 ### `SsmParameterHelper.writeToStringParameter(scope, id, props)`
 
-- `scope`: construct scope to define the parameter in
-- `id`: CDK construct id for the parameter resource
-- `props.parameterName` (required): parameter name (for example, `/my/app/value`)
-- `props.stringValue` (required): parameter value
-- `props.description` (optional): parameter description
-- `props.tier` (optional): SSM parameter tier (defaults to `STANDARD`)
-- `props.tags` (optional): additional tags to apply (in addition to `ssm:managed-by=ssm-string-parameter-helper`)
-- returns: the created `ssm.StringParameter`
+| Name | Required | Description |
+| --- | --- | --- |
+| `scope` | yes | Construct scope to define the parameter in. |
+| `id` | yes | CDK construct id for the parameter resource. |
+| `props.parameterName` | yes | Parameter name (for example, `/my/app/value`). |
+| `props.stringValue` | yes | Parameter value. |
+| `props.description` | no | Parameter description. |
+| `props.tier` | no | SSM parameter tier. Defaults to `STANDARD`. |
+| `props.tags` | no | Additional tags, applied in addition to `ssm:managed-by=ssm-string-parameter-helper`. |
+
+Returns the created `ssm.StringParameter`.
 
 ### `SsmParameterHelper.writeToStringListParameter(scope, id, props)`
 
-- `scope`: construct scope to define the parameter in
-- `id`: CDK construct id for the parameter resource
-- `props.parameterName` (required): parameter name (for example, `/my/app/list`)
-- `props.stringListValue` (required): list of strings
-- `props.description` (optional): parameter description
-- `props.tier` (optional): SSM parameter tier (defaults to `STANDARD`)
-- `props.tags` (optional): additional tags to apply (in addition to `ssm:managed-by=ssm-string-parameter-helper`)
-- returns: the created `ssm.StringListParameter`
+| Name | Required | Description |
+| --- | --- | --- |
+| `scope` | yes | Construct scope to define the parameter in. |
+| `id` | yes | CDK construct id for the parameter resource. |
+| `props.parameterName` | yes | Parameter name (for example, `/my/app/list`). |
+| `props.stringListValue` | yes | List of strings. Must contain at least one value. A resolved value must not contain a comma. Unresolved CDK tokens are not inspected. |
+| `props.description` | no | Parameter description. |
+| `props.tier` | no | SSM parameter tier. Defaults to `STANDARD`. |
+| `props.tags` | no | Additional tags, applied in addition to `ssm:managed-by=ssm-string-parameter-helper`. |
+
+Returns the created `ssm.StringListParameter`.
 
 ### `SsmParameterHelper.splitListTokenToStrings(listToken, length)`
 
-- `listToken`: token list produced by an SSM StringList lookup
-- `length` (required): fixed output length; must be an integer \(>= 0\) and known at synth time
-- returns: a CloudFormation-level fixed-length `string[]`
+| Name | Required | Description |
+| --- | --- | --- |
+| `listToken` | yes | Token list produced by an SSM StringList lookup. |
+| `length` | yes | Fixed output length. Must be an integer greater than or equal to 0 and known at synthesis. |
+
+Returns a CloudFormation-level fixed-length `string[]`.
+
+## API
+
+See [API.md](./API.md).
 
 ## Requirements
 
-- Node.js >= 20
+- Node.js >= 20.0.0
 - `aws-cdk-lib` ^2.232.0
 - `constructs` ^10.5.1
 

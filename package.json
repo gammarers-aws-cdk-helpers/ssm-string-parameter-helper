@@ -36,6 +36,7 @@
     "organization": false
   },
   "devDependencies": {
+    "@gammarers/projen-projects": "^0.5.0",
     "@stylistic/eslint-plugin": "^2",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
@@ -64,7 +65,12 @@
     "constructs": "^10.5.1"
   },
   "keywords": [
-    "cdk"
+    "aws",
+    "cdk",
+    "helper",
+    "parameter",
+    "ssm",
+    "store"
   ],
   "engines": {
     "node": ">= 20.0.0"
