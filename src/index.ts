@@ -1,8 +1,31 @@
-import { Fn, Tags } from 'aws-cdk-lib';
+import { Fn, Tags, Token } from 'aws-cdk-lib';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 const MANAGED_BY_TAG_VALUE = 'ssm-string-parameter-helper';
+
+/**
+ * Reject StringList values that SSM cannot store as a stable list.
+ *
+ * CloudFormation receives one comma-separated string. An empty list is rejected
+ * by SSM, and a comma inside a resolved value becomes an extra separator after deploy.
+ * Unresolved CDK tokens are skipped because their text is not known at synth time.
+ */
+const assertWritableStringListValue = (values: string[]): void => {
+  if (values.length === 0) {
+    throw new Error('stringListValue must contain at least one value');
+  }
+
+  for (const [index, value] of values.entries()) {
+    if (Token.isUnresolved(value)) {
+      continue;
+    }
+    if (!value.includes(',')) {
+      continue;
+    }
+    throw new Error(`stringListValue[${index}] must not contain a comma`);
+  }
+};
 
 /**
  * Properties for `SsmParameterHelper.writeToStringParameter`.
@@ -40,6 +63,9 @@ export interface WriteToStringListParameterProps {
   readonly parameterName: string;
   /**
    * Parameter values.
+   *
+   * Must contain at least one value. A resolved value must not contain a comma.
+   * Unresolved CDK tokens are not inspected.
    */
   readonly stringListValue: string[];
   /**
@@ -128,12 +154,19 @@ export class SsmParameterHelper {
    * A default tag of `ssm:managed-by=ssm-string-parameter-helper` is always added, and
    * `props.tags` are applied on top.
    *
+   * `props.stringListValue` is written as one comma-separated string. The list must
+   * contain at least one value. A resolved value must not contain a comma, because
+   * that comma is treated as a separator after deploy. Unresolved CDK tokens are not inspected.
+   *
    * @param scope Construct scope to define the parameter in.
    * @param id CDK construct id for the parameter resource.
    * @param props Parameter properties.
    * @returns The created `ssm.StringListParameter`.
+   * @throws {Error} If `stringListValue` is empty, or a resolved element contains a comma.
    */
   public static writeToStringListParameter(scope: Construct, id: string, props: WriteToStringListParameterProps): ssm.StringListParameter {
+    assertWritableStringListValue(props.stringListValue);
+
     const param = new ssm.StringListParameter(scope, id, {
       parameterName: props.parameterName,
       stringListValue: props.stringListValue,
