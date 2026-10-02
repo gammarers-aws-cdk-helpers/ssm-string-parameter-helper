@@ -19,8 +19,7 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
   test('should throw when length is not an integer >= 0', () => {
     expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], -1)).toThrow(/length must be an integer >= 0/);
     expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], 1.1)).toThrow(/length must be an integer >= 0/);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], NaN as any)).toThrow(/length must be an integer >= 0/);
+    expect(() => SsmParameterHelper.splitListTokenToStrings(['a'], NaN)).toThrow(/length must be an integer >= 0/);
   });
 
   test('should return empty array when length is 0', () => {
