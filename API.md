@@ -49,6 +49,9 @@ public readonly stringListValue: string[];
 
 Parameter values.
 
+Must contain at least one value. A resolved value must not contain a comma.
+Unresolved CDK tokens are not inspected.
+
 ---
 
 ##### `description`<sup>Optional</sup> <a name="description" id="ssm-string-parameter-helper.WriteToStringListParameterProps.property.description"></a>
@@ -316,6 +319,10 @@ Create an SSM **StringList** parameter and apply tags.
 
 A default tag of `ssm:managed-by=ssm-string-parameter-helper` is always added, and
 `props.tags` are applied on top.
+
+`props.stringListValue` is written as one comma-separated string. The list must
+contain at least one value. A resolved value must not contain a comma, because
+that comma is treated as a separator after deploy. Unresolved CDK tokens are not inspected.
 
 ###### `scope`<sup>Required</sup> <a name="scope" id="ssm-string-parameter-helper.SsmParameterHelper.writeToStringListParameter.parameter.scope"></a>
 
