@@ -1,51 +1,14 @@
-import { awscdk, javascript, github } from 'projen';
-const project = new awscdk.AwsCdkConstructLibrary({
-  author: 'yicr',
-  authorAddress: 'yicr@users.noreply.github.com',
-  defaultReleaseBranch: 'main',
+import { ProjenCdkConstructLibrary } from '@gammarers/projen-projects';
+const project = new ProjenCdkConstructLibrary({
   cdkVersion: '2.232.0',
-  typescriptVersion: '6.0.x',
-  jsiiVersion: '6.0.x',
   name: 'ssm-string-parameter-helper',
   description: 'Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store parameters in AWS CDK v2, with a consistent tagging convention.',
   keywords: ['aws', 'cdk', 'ssm', 'parameter', 'store', 'helper'],
-  packageManager: javascript.NodePackageManager.NPM,
-  projenrcTs: true,
   repositoryUrl: 'https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper.git',
+  devDeps: [
+    '@gammarers/projen-projects@^0.5.0',
+  ],
   releaseToNpm: true,
   npmTrustedPublishing: true,
-  npmAccess: javascript.NpmAccess.PUBLIC,
-  minNodeVersion: '20.0.0',
-  workflowNodeVersion: '24.x',
-  depsUpgradeOptions: {
-    workflowOptions: {
-      labels: ['auto-approve', 'auto-merge'],
-      schedule: javascript.UpgradeDependenciesSchedule.WEEKLY,
-    },
-  },
-  githubOptions: {
-    projenCredentials: github.GithubCredentials.fromApp({
-      permissions: {
-        pullRequests: github.workflows.AppPermission.WRITE,
-        contents: github.workflows.AppPermission.WRITE,
-        workflows: github.workflows.AppPermission.WRITE,
-      },
-    }),
-  },
-  autoApproveOptions: {
-    allowedUsernames: [
-      'gammarers-projen-upgrade-bot[bot]',
-      'yicr',
-    ],
-  },
-  jestOptions: {
-    extraCliOptions: ['--silent'],
-  },
-  tsconfigDev: {
-    compilerOptions: {
-      strict: true,
-    },
-  },
 });
-project.addPackageIgnore('/.devcontainer');
 project.synth();
