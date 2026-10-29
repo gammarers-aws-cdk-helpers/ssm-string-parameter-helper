@@ -1,5 +1,4 @@
 import * as cdk from 'aws-cdk-lib';
-import { Fn } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { SsmParameterHelper } from '../src';
@@ -29,7 +28,7 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
   });
 
   test('should return empty array when length is 0', () => {
-    const selectSpy = jest.spyOn(Fn, 'select');
+    const selectSpy = jest.spyOn(cdk.Fn, 'select');
     try {
       expect(SsmParameterHelper.splitListTokenToStrings(['x', 'y'], 0)).toEqual([]);
       expect(selectSpy).not.toHaveBeenCalled();
@@ -40,9 +39,10 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
 
   test('should select each index with Fn.select', () => {
     const listToken = ['token-list'];
-    const selectSpy = jest.spyOn(Fn, 'select').mockImplementation(((index: number, list: string[]) => {
+    // Jest's mock type rejects a shortened Fn.select. unknown is the narrowest assertion that keeps the spy callable.
+    const selectSpy = jest.spyOn(cdk.Fn, 'select').mockImplementation(((index: number, list: string[]) => {
       return `selected:${index}:${list[0]}`;
-    }) as unknown as typeof Fn.select);
+    }) as unknown as typeof cdk.Fn.select);
 
     try {
       expect(SsmParameterHelper.splitListTokenToStrings(listToken, 3)).toEqual([
@@ -377,6 +377,7 @@ const findSsmLookupParameter = (
     if (!isRecord(spec)) {
       continue;
     }
+
     if (spec.Default !== parameterName || typeof spec.Type !== 'string') {
       continue;
     }
@@ -437,7 +438,7 @@ describe('SsmParameterHelper.readFromStringParameter / readFromStringListParamet
     const stack = new cdk.Stack(app, 'ReadListStack');
 
     const values = SsmParameterHelper.readFromStringListParameter(stack, '/my/app/list');
-    new cdk.CfnOutput(stack, 'ListValue', { value: Fn.join(',', values) });
+    new cdk.CfnOutput(stack, 'ListValue', { value: cdk.Fn.join(',', values) });
 
     expect(Array.isArray(values)).toBe(true);
     expect(cdk.Token.isUnresolved(values)).toBe(true);
@@ -461,7 +462,7 @@ describe('SsmParameterHelper.readFromStringParameter / readFromStringListParamet
     const parameterName = '/typed/list';
 
     const values = SsmParameterHelper.readFromStringListParameter(stack, parameterName, valueType);
-    new cdk.CfnOutput(stack, 'TypedListValue', { value: Fn.join(',', values) });
+    new cdk.CfnOutput(stack, 'TypedListValue', { value: cdk.Fn.join(',', values) });
 
     expect(Array.isArray(values)).toBe(true);
 

@@ -1,5 +1,5 @@
 import { Token } from 'aws-cdk-lib';
-import { resolveWritableParameterName } from '../src/core/parameter-name';
+import { resolveWritableParameterName } from '../src/ssm-parameter-helper';
 
 describe('resolveWritableParameterName', () => {
   test('should reject an unresolved token', () => {
