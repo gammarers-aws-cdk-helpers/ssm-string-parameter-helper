@@ -12,6 +12,19 @@ const MANAGED_BY_TAG_KEY = 'ssm:managed-by';
 const MANAGED_BY_TAG_VALUE = 'ssm-string-parameter-helper';
 
 /**
+ * Apply the managed-by tag, then caller tags.
+ *
+ * Caller tags come second so a matching key replaces the default.
+ */
+const applyParameterTags = (resource: Construct, tags?: Record<string, string>): void => {
+  Tags.of(resource).add(MANAGED_BY_TAG_KEY, MANAGED_BY_TAG_VALUE);
+
+  for (const [key, value] of Object.entries(tags ?? {})) {
+    Tags.of(resource).add(key, value);
+  }
+};
+
+/**
  * Static helpers for reading and writing AWS Systems Manager (SSM) Parameter
  * Store parameters in AWS CDK.
  *
@@ -90,10 +103,7 @@ export class SsmParameterHelper {
       tier: props.tier ?? ssm.ParameterTier.STANDARD,
     });
 
-    Tags.of(param).add(MANAGED_BY_TAG_KEY, MANAGED_BY_TAG_VALUE);
-    for (const [k, v] of Object.entries(props.tags ?? {})) {
-      Tags.of(param).add(k, v);
-    }
+    applyParameterTags(param, props.tags);
     return param;
   }
 
@@ -135,10 +145,7 @@ export class SsmParameterHelper {
       tier: props.tier ?? ssm.ParameterTier.STANDARD,
     });
 
-    Tags.of(param).add(MANAGED_BY_TAG_KEY, MANAGED_BY_TAG_VALUE);
-    for (const [k, v] of Object.entries(props.tags ?? {})) {
-      Tags.of(param).add(k, v);
-    }
+    applyParameterTags(param, props.tags);
     return param;
   }
 
