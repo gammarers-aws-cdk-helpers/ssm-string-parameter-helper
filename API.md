@@ -5,7 +5,7 @@
 
 ### WriteToStringListParameterProps <a name="WriteToStringListParameterProps" id="ssm-string-parameter-helper.WriteToStringListParameterProps"></a>
 
-Properties for `SsmParameterHelper.writeToStringListParameter`.
+Properties for {@link SsmParameterHelper.writeToStringListParameter}.
 
 #### Initializer <a name="Initializer" id="ssm-string-parameter-helper.WriteToStringListParameterProps.Initializer"></a>
 
@@ -19,7 +19,7 @@ const writeToStringListParameterProps: WriteToStringListParameterProps = { ... }
 
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
-| <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.parameterName">parameterName</a></code> | <code>string</code> | Parameter name (for example, `/my/app/list`). |
+| <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.parameterName">parameterName</a></code> | <code>string</code> | Concrete simple name (for example, `flatList`) or fully qualified path (for example, `/my/app/list`). |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.stringListValue">stringListValue</a></code> | <code>string[]</code> | Parameter values. |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.description">description</a></code> | <code>string</code> | Optional parameter description. |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringListParameterProps.property.tags">tags</a></code> | <code>{[ key: string ]: string}</code> | Optional additional tags to apply. |
@@ -35,7 +35,10 @@ public readonly parameterName: string;
 
 - *Type:* string
 
-Parameter name (for example, `/my/app/list`).
+Concrete simple name (for example, `flatList`) or fully qualified path (for example, `/my/app/list`).
+
+A simple name is stored with `simpleName: true`.
+The name must not be empty, contain whitespace, or include an empty path segment.
 
 ---
 
@@ -94,7 +97,7 @@ Defaults to `STANDARD`.
 
 ### WriteToStringParameterProps <a name="WriteToStringParameterProps" id="ssm-string-parameter-helper.WriteToStringParameterProps"></a>
 
-Properties for `SsmParameterHelper.writeToStringParameter`.
+Properties for {@link SsmParameterHelper.writeToStringParameter}.
 
 #### Initializer <a name="Initializer" id="ssm-string-parameter-helper.WriteToStringParameterProps.Initializer"></a>
 
@@ -108,7 +111,7 @@ const writeToStringParameterProps: WriteToStringParameterProps = { ... }
 
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
-| <code><a href="#ssm-string-parameter-helper.WriteToStringParameterProps.property.parameterName">parameterName</a></code> | <code>string</code> | Parameter name (for example, `/my/app/value`). |
+| <code><a href="#ssm-string-parameter-helper.WriteToStringParameterProps.property.parameterName">parameterName</a></code> | <code>string</code> | Concrete simple name (for example, `flatName`) or fully qualified path (for example, `/my/app/value`). |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringParameterProps.property.stringValue">stringValue</a></code> | <code>string</code> | Parameter value. |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringParameterProps.property.description">description</a></code> | <code>string</code> | Optional parameter description. |
 | <code><a href="#ssm-string-parameter-helper.WriteToStringParameterProps.property.tags">tags</a></code> | <code>{[ key: string ]: string}</code> | Optional additional tags to apply. |
@@ -124,7 +127,10 @@ public readonly parameterName: string;
 
 - *Type:* string
 
-Parameter name (for example, `/my/app/value`).
+Concrete simple name (for example, `flatName`) or fully qualified path (for example, `/my/app/value`).
+
+A simple name is stored with `simpleName: true`.
+The name must not be empty, contain whitespace, or include an empty path segment.
 
 ---
 
@@ -214,7 +220,7 @@ The return value is a `string[]` that may contain a CDK token.
 If `type` is provided, the Parameter Store value type is validated at deploy time.
 
 If you need a fixed-length `string[]` at CloudFormation level, combine this
-with `SsmParameterHelper.splitListTokenToStrings`.
+with {@link SsmParameterHelper.splitListTokenToStrings}.
 
 ###### `scope`<sup>Required</sup> <a name="scope" id="ssm-string-parameter-helper.SsmParameterHelper.readFromStringListParameter.parameter.scope"></a>
 
@@ -289,7 +295,7 @@ Expand an SSM StringList token (a `string[]` that may contain a CDK token) into 
 **length (N)** must be known at synth time.
 - Intended to be used with the return value of
   `StringListParameter.valueForTypedListParameter()` (for example via
-  `SsmParameterHelper.readFromStringListParameter`).
+  {@link SsmParameterHelper.readFromStringListParameter}).
 
 ###### `listToken`<sup>Required</sup> <a name="listToken" id="ssm-string-parameter-helper.SsmParameterHelper.splitListTokenToStrings.parameter.listToken"></a>
 
@@ -320,9 +326,13 @@ Create an SSM **StringList** parameter and apply tags.
 A default tag of `ssm:managed-by=ssm-string-parameter-helper` is always added, and
 `props.tags` are applied on top.
 
+`parameterName` must be a concrete simple name or a fully qualified path.
+A name with no leading `/` is created with `simpleName: true`.
+
 `props.stringListValue` is written as one comma-separated string. The list must
 contain at least one value. A resolved value must not contain a comma, because
-that comma is treated as a separator after deploy. Unresolved CDK tokens are not inspected.
+that comma is treated as a separator after deploy. Unresolved CDK tokens in the
+list are not inspected.
 
 ###### `scope`<sup>Required</sup> <a name="scope" id="ssm-string-parameter-helper.SsmParameterHelper.writeToStringListParameter.parameter.scope"></a>
 
@@ -360,6 +370,9 @@ Create an SSM **String** parameter and apply tags.
 
 A default tag of `ssm:managed-by=ssm-string-parameter-helper` is always added, and
 `props.tags` are applied on top.
+
+`parameterName` must be a concrete simple name or a fully qualified path.
+A name with no leading `/` is created with `simpleName: true`.
 
 ###### `scope`<sup>Required</sup> <a name="scope" id="ssm-string-parameter-helper.SsmParameterHelper.writeToStringParameter.parameter.scope"></a>
 
