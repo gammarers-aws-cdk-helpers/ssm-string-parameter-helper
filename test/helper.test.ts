@@ -1,5 +1,4 @@
 import * as cdk from 'aws-cdk-lib';
-import { Fn } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { SsmParameterHelper } from '../src';
@@ -13,6 +12,12 @@ describe('public api exports', () => {
     expect(typeof SsmParameterHelper.splitListTokenToStrings).toBe('function');
   });
 
+  test('should refuse to instantiate SsmParameterHelper', () => {
+    // The constructor is private. This assertion is the runtime path that coverage can execute.
+    const Helper = SsmParameterHelper as unknown as new () => SsmParameterHelper;
+
+    expect(() => new Helper()).toThrow('SsmParameterHelper cannot be instantiated');
+  });
 });
 
 describe('SsmParameterHelper.splitListTokenToStrings', () => {
@@ -23,7 +28,7 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
   });
 
   test('should return empty array when length is 0', () => {
-    const selectSpy = jest.spyOn(Fn, 'select');
+    const selectSpy = jest.spyOn(cdk.Fn, 'select');
     try {
       expect(SsmParameterHelper.splitListTokenToStrings(['x', 'y'], 0)).toEqual([]);
       expect(selectSpy).not.toHaveBeenCalled();
@@ -34,9 +39,10 @@ describe('SsmParameterHelper.splitListTokenToStrings', () => {
 
   test('should select each index with Fn.select', () => {
     const listToken = ['token-list'];
-    const selectSpy = jest.spyOn(Fn, 'select').mockImplementation(((index: number, list: string[]) => {
+    // Jest's mock type rejects a shortened Fn.select. unknown is the narrowest assertion that keeps the spy callable.
+    const selectSpy = jest.spyOn(cdk.Fn, 'select').mockImplementation(((index: number, list: string[]) => {
       return `selected:${index}:${list[0]}`;
-    }) as unknown as typeof Fn.select);
+    }) as unknown as typeof cdk.Fn.select);
 
     try {
       expect(SsmParameterHelper.splitListTokenToStrings(listToken, 3)).toEqual([
@@ -263,6 +269,90 @@ describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter
       Value: { 'Fn::Join': [',', ['a', { Ref: 'ListItem' }]] },
     });
   });
+
+  test.each([
+    { parameterName: '', message: 'parameterName must not be empty' },
+    { parameterName: ' ', message: 'parameterName must not contain whitespace' },
+    {
+      parameterName: 'bad@name',
+      message: 'parameterName must contain only letters, numbers, and the symbols . - _ /. Received: bad@name',
+    },
+    {
+      parameterName: 'foo/bar',
+      message: 'parameterName must start with "/" when it contains "/". Received: foo/bar',
+    },
+    {
+      parameterName: '/foo/',
+      message: 'parameterName must be a fully qualified path without an empty segment. Received: /foo/',
+    },
+  ])('should reject %j from both write methods', ({ parameterName, message }) => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'InvalidNameStack');
+
+    expect(() => SsmParameterHelper.writeToStringParameter(stack, 'StringParam', {
+      parameterName,
+      stringValue: 'value',
+    })).toThrow(message);
+
+    expect(() => SsmParameterHelper.writeToStringListParameter(stack, 'ListParam', {
+      parameterName,
+      stringListValue: ['a'],
+    })).toThrow(message);
+  });
+
+  test('should reject an unresolved parameter name from both write methods', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'TokenNameStack');
+    const parameterName = cdk.Token.asString({ Ref: 'ParamName' });
+
+    expect(() => SsmParameterHelper.writeToStringParameter(stack, 'StringParam', {
+      parameterName,
+      stringValue: 'value',
+    })).toThrow('parameterName must be a concrete string');
+
+    expect(() => SsmParameterHelper.writeToStringListParameter(stack, 'ListParam', {
+      parameterName,
+      stringListValue: ['a'],
+    })).toThrow('parameterName must be a concrete string');
+  });
+
+  test('should synthesize flat names and a simple-name ARN', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'FlatWriteStack', {
+      env: { account: '111111111111', region: 'us-east-1' },
+    });
+    const reader = new cdk.Stack(app, 'FlatReaderStack', {
+      env: { account: '222222222222', region: 'us-east-1' },
+    });
+
+    const stringParameter = SsmParameterHelper.writeToStringParameter(stack, 'FlatString', {
+      parameterName: 'flatName',
+      stringValue: 'value',
+    });
+    const listParameter = SsmParameterHelper.writeToStringListParameter(stack, 'FlatList', {
+      parameterName: 'flatList',
+      stringListValue: ['a', 'b'],
+    });
+
+    new cdk.CfnOutput(reader, 'StringArn', { value: stringParameter.parameterArn });
+    new cdk.CfnOutput(reader, 'ListArn', { value: listParameter.parameterArn });
+
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: 'flatName',
+      Type: 'String',
+      Value: 'value',
+    });
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: 'flatList',
+      Type: 'StringList',
+      Value: 'a,b',
+    });
+
+    const readerTemplate = JSON.stringify(Template.fromStack(reader).toJSON());
+    expect(readerTemplate).toContain('parameter/flatName');
+    expect(readerTemplate).toContain('parameter/flatList');
+  });
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -287,6 +377,7 @@ const findSsmLookupParameter = (
     if (!isRecord(spec)) {
       continue;
     }
+
     if (spec.Default !== parameterName || typeof spec.Type !== 'string') {
       continue;
     }
@@ -347,7 +438,7 @@ describe('SsmParameterHelper.readFromStringParameter / readFromStringListParamet
     const stack = new cdk.Stack(app, 'ReadListStack');
 
     const values = SsmParameterHelper.readFromStringListParameter(stack, '/my/app/list');
-    new cdk.CfnOutput(stack, 'ListValue', { value: Fn.join(',', values) });
+    new cdk.CfnOutput(stack, 'ListValue', { value: cdk.Fn.join(',', values) });
 
     expect(Array.isArray(values)).toBe(true);
     expect(cdk.Token.isUnresolved(values)).toBe(true);
@@ -371,7 +462,7 @@ describe('SsmParameterHelper.readFromStringParameter / readFromStringListParamet
     const parameterName = '/typed/list';
 
     const values = SsmParameterHelper.readFromStringListParameter(stack, parameterName, valueType);
-    new cdk.CfnOutput(stack, 'TypedListValue', { value: Fn.join(',', values) });
+    new cdk.CfnOutput(stack, 'TypedListValue', { value: cdk.Fn.join(',', values) });
 
     expect(Array.isArray(values)).toBe(true);
 

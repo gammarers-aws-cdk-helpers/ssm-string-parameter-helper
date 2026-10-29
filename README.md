@@ -1,11 +1,9 @@
-# SSM String Parameter Helper (CDK v2)
+# SSM String Parameter Helper
 
 [![npm version](https://img.shields.io/npm/v/ssm-string-parameter-helper?style=flat-square)](https://www.npmjs.com/package/ssm-string-parameter-helper)
 [![license](https://img.shields.io/npm/l/ssm-string-parameter-helper?style=flat-square)](https://www.npmjs.com/package/ssm-string-parameter-helper)
 [![Node.js](https://img.shields.io/node/v/ssm-string-parameter-helper?style=flat-square)](https://www.npmjs.com/package/ssm-string-parameter-helper)
 [![build](https://img.shields.io/github/actions/workflow/status/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/build.yml?label=build&style=flat-square)](https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper/actions/workflows/build.yml)
-
-[![View on Construct Hub](https://constructs.dev/badge?package=ssm-string-parameter-helper)](https://constructs.dev/packages/ssm-string-parameter-helper)
 
 Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store parameters in AWS CDK v2, with a consistent tagging convention. The public API is exposed as static methods on `SsmParameterHelper` (jsii-compatible; the class cannot be instantiated).
 
@@ -15,6 +13,7 @@ Small helpers for reading and writing AWS Systems Manager (SSM) Parameter Store 
 - Read SSM `StringList` parameters with `SsmParameterHelper.readFromStringListParameter` (return value may include CDK tokens)
 - Optionally validate Parameter Store value types at deploy time via `ssm.ParameterValueType`
 - Create `String` / `StringList` parameters with `SsmParameterHelper.writeToStringParameter` / `SsmParameterHelper.writeToStringListParameter`
+- Accept a concrete simple name or a fully qualified path, and reject empty names, whitespace, and empty path segments at synthesis
 - Apply a default `ssm:managed-by=ssm-string-parameter-helper` tag on created parameters, plus optional custom tags
 - Expand a `StringList` token into a fixed-length CloudFormation `string[]` with `SsmParameterHelper.splitListTokenToStrings`
 
@@ -24,7 +23,7 @@ Call a static method on `SsmParameterHelper` from a CDK stack.
 
 Reads use CloudFormation dynamic references. The returned value may be a token and is resolved at deploy time. Pass `ssm.ParameterValueType` when deploy time should check the Parameter Store value type.
 
-Writes create an SSM parameter and always add the tag `ssm:managed-by=ssm-string-parameter-helper`. Tags in `props.tags` are applied as well. `writeToStringListParameter` stores the list as one comma-separated string. The list must contain at least one value, and a resolved value must not contain a comma. Unresolved CDK tokens are not inspected.
+Writes create an SSM parameter and always add the tag `ssm:managed-by=ssm-string-parameter-helper`. Tags in `props.tags` are applied as well. The name must be a concrete simple name (no `/`) or a fully qualified path that starts with `/`. A simple name is stored with `simpleName: true`. Empty names, whitespace, and paths with an empty segment are rejected at synthesis. `writeToStringListParameter` stores the list as one comma-separated string. The list must contain at least one value, and a resolved value must not contain a comma. Unresolved CDK tokens in list values are not inspected.
 
 `splitListTokenToStrings` turns a StringList token into a fixed-length `string[]`. The length must be an integer greater than or equal to 0 and known at synthesis.
 
@@ -109,13 +108,13 @@ Returns a `string` that may be a CDK token.
 
 Returns a `string[]` that may contain CDK tokens.
 
-### `SsmParameterHelper.writeToStringParameter(scope, id, props)`
+### `SsmParameterHelper.writeToStringParameter(scope, id, props: WriteToStringParameterProps)`
 
 | Name | Required | Description |
 | --- | --- | --- |
 | `scope` | yes | Construct scope to define the parameter in. |
 | `id` | yes | CDK construct id for the parameter resource. |
-| `props.parameterName` | yes | Parameter name (for example, `/my/app/value`). |
+| `props.parameterName` | yes | Concrete simple name (for example, `flatName`) or fully qualified path (for example, `/my/app/value`). A simple name is stored with `simpleName: true`. Empty names, whitespace, and empty path segments are rejected. |
 | `props.stringValue` | yes | Parameter value. |
 | `props.description` | no | Parameter description. |
 | `props.tier` | no | SSM parameter tier. Defaults to `STANDARD`. |
@@ -123,13 +122,13 @@ Returns a `string[]` that may contain CDK tokens.
 
 Returns the created `ssm.StringParameter`.
 
-### `SsmParameterHelper.writeToStringListParameter(scope, id, props)`
+### `SsmParameterHelper.writeToStringListParameter(scope, id, props: WriteToStringListParameterProps)`
 
 | Name | Required | Description |
 | --- | --- | --- |
 | `scope` | yes | Construct scope to define the parameter in. |
 | `id` | yes | CDK construct id for the parameter resource. |
-| `props.parameterName` | yes | Parameter name (for example, `/my/app/list`). |
+| `props.parameterName` | yes | Concrete simple name (for example, `flatList`) or fully qualified path (for example, `/my/app/list`). A simple name is stored with `simpleName: true`. Empty names, whitespace, and empty path segments are rejected. |
 | `props.stringListValue` | yes | List of strings. Must contain at least one value. A resolved value must not contain a comma. Unresolved CDK tokens are not inspected. |
 | `props.description` | no | Parameter description. |
 | `props.tier` | no | SSM parameter tier. Defaults to `STANDARD`. |

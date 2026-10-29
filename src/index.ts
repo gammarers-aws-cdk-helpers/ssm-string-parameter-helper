@@ -1,5 +1,5 @@
 export { SsmParameterHelper } from './ssm-parameter-helper';
-export {
+export type {
   WriteToStringListParameterProps,
   WriteToStringParameterProps,
-} from './core/write-parameter-props';
+} from './ssm-parameter-helper';
