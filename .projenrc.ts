@@ -6,7 +6,7 @@ const project = new ProjenCdkConstructLibrary({
   keywords: ['aws', 'cdk', 'ssm', 'parameter', 'store', 'helper'],
   repositoryUrl: 'https://github.com/gammarers-aws-cdk-helpers/ssm-string-parameter-helper.git',
   devDeps: [
-    '@gammarers/projen-projects@^0.5.0',
+    '@gammarers/projen-projects@^0.6.2',
   ],
   releaseToNpm: true,
   npmTrustedPublishing: true,

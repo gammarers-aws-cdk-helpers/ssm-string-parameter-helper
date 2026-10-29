@@ -149,5 +149,8 @@ export class SsmParameterHelper {
     return Array.from({ length }, (_, i) => Fn.select(i, listToken));
   }
 
-  private constructor() {}
+  private constructor() {
+    // Static methods are the API. Reject `new` at runtime as well as in TypeScript.
+    throw new Error('SsmParameterHelper cannot be instantiated');
+  }
 }

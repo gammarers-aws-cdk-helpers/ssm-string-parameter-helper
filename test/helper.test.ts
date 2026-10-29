@@ -13,6 +13,12 @@ describe('public api exports', () => {
     expect(typeof SsmParameterHelper.splitListTokenToStrings).toBe('function');
   });
 
+  test('should refuse to instantiate SsmParameterHelper', () => {
+    // The constructor is private. This assertion is the runtime path that coverage can execute.
+    const Helper = SsmParameterHelper as unknown as new () => SsmParameterHelper;
+
+    expect(() => new Helper()).toThrow('SsmParameterHelper cannot be instantiated');
+  });
 });
 
 describe('SsmParameterHelper.splitListTokenToStrings', () => {
