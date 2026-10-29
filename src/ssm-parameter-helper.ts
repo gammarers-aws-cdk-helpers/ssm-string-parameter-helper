@@ -1,6 +1,7 @@
 import { Fn, Tags } from 'aws-cdk-lib';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
+import { resolveWritableParameterName } from './core/parameter-name';
 import { assertWritableStringListValue } from './core/string-list-value';
 import type { WriteToStringListParameterProps, WriteToStringParameterProps } from './core/write-parameter-props';
 
@@ -64,18 +65,26 @@ export class SsmParameterHelper {
    * A default tag of `ssm:managed-by=ssm-string-parameter-helper` is always added, and
    * `props.tags` are applied on top.
    *
+   * `parameterName` must be a concrete simple name or a fully qualified path.
+   * A name with no leading `/` is created with `simpleName: true`.
+   *
    * @param scope Construct scope to define the parameter in.
    * @param id CDK construct id for the parameter resource.
    * @param props Parameter properties.
    * @returns The created `ssm.StringParameter`.
+   * @throws {Error} If `parameterName` is an unresolved token, empty, contains whitespace,
+   * uses a disallowed character, contains `/` without a leading `/`, or has an empty path segment.
    */
   public static writeToStringParameter(
     scope: Construct,
     id: string,
     props: WriteToStringParameterProps,
   ): ssm.StringParameter {
+    const name = resolveWritableParameterName(props.parameterName);
+
     const param = new ssm.StringParameter(scope, id, {
-      parameterName: props.parameterName,
+      parameterName: name.parameterName,
+      simpleName: name.simpleName,
       stringValue: props.stringValue,
       description: props.description,
       tier: props.tier ?? ssm.ParameterTier.STANDARD,
@@ -94,14 +103,20 @@ export class SsmParameterHelper {
    * A default tag of `ssm:managed-by=ssm-string-parameter-helper` is always added, and
    * `props.tags` are applied on top.
    *
+   * `parameterName` must be a concrete simple name or a fully qualified path.
+   * A name with no leading `/` is created with `simpleName: true`.
+   *
    * `props.stringListValue` is written as one comma-separated string. The list must
    * contain at least one value. A resolved value must not contain a comma, because
-   * that comma is treated as a separator after deploy. Unresolved CDK tokens are not inspected.
+   * that comma is treated as a separator after deploy. Unresolved CDK tokens in the
+   * list are not inspected.
    *
    * @param scope Construct scope to define the parameter in.
    * @param id CDK construct id for the parameter resource.
    * @param props Parameter properties.
    * @returns The created `ssm.StringListParameter`.
+   * @throws {Error} If `parameterName` is an unresolved token, empty, contains whitespace,
+   * uses a disallowed character, contains `/` without a leading `/`, or has an empty path segment.
    * @throws {Error} If `stringListValue` is empty, or a resolved element contains a comma.
    */
   public static writeToStringListParameter(
@@ -109,10 +124,12 @@ export class SsmParameterHelper {
     id: string,
     props: WriteToStringListParameterProps,
   ): ssm.StringListParameter {
+    const name = resolveWritableParameterName(props.parameterName);
     assertWritableStringListValue(props.stringListValue);
 
     const param = new ssm.StringListParameter(scope, id, {
-      parameterName: props.parameterName,
+      parameterName: name.parameterName,
+      simpleName: name.simpleName,
       stringListValue: props.stringListValue,
       description: props.description,
       tier: props.tier ?? ssm.ParameterTier.STANDARD,

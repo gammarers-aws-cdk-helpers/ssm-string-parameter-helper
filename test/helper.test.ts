@@ -269,6 +269,90 @@ describe('SsmParameterHelper.writeToStringParameter / writeToStringListParameter
       Value: { 'Fn::Join': [',', ['a', { Ref: 'ListItem' }]] },
     });
   });
+
+  test.each([
+    { parameterName: '', message: 'parameterName must not be empty' },
+    { parameterName: ' ', message: 'parameterName must not contain whitespace' },
+    {
+      parameterName: 'bad@name',
+      message: 'parameterName must contain only letters, numbers, and the symbols . - _ /. Received: bad@name',
+    },
+    {
+      parameterName: 'foo/bar',
+      message: 'parameterName must start with "/" when it contains "/". Received: foo/bar',
+    },
+    {
+      parameterName: '/foo/',
+      message: 'parameterName must be a fully qualified path without an empty segment. Received: /foo/',
+    },
+  ])('should reject %j from both write methods', ({ parameterName, message }) => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'InvalidNameStack');
+
+    expect(() => SsmParameterHelper.writeToStringParameter(stack, 'StringParam', {
+      parameterName,
+      stringValue: 'value',
+    })).toThrow(message);
+
+    expect(() => SsmParameterHelper.writeToStringListParameter(stack, 'ListParam', {
+      parameterName,
+      stringListValue: ['a'],
+    })).toThrow(message);
+  });
+
+  test('should reject an unresolved parameter name from both write methods', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'TokenNameStack');
+    const parameterName = cdk.Token.asString({ Ref: 'ParamName' });
+
+    expect(() => SsmParameterHelper.writeToStringParameter(stack, 'StringParam', {
+      parameterName,
+      stringValue: 'value',
+    })).toThrow('parameterName must be a concrete string');
+
+    expect(() => SsmParameterHelper.writeToStringListParameter(stack, 'ListParam', {
+      parameterName,
+      stringListValue: ['a'],
+    })).toThrow('parameterName must be a concrete string');
+  });
+
+  test('should synthesize flat names and a simple-name ARN', () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, 'FlatWriteStack', {
+      env: { account: '111111111111', region: 'us-east-1' },
+    });
+    const reader = new cdk.Stack(app, 'FlatReaderStack', {
+      env: { account: '222222222222', region: 'us-east-1' },
+    });
+
+    const stringParameter = SsmParameterHelper.writeToStringParameter(stack, 'FlatString', {
+      parameterName: 'flatName',
+      stringValue: 'value',
+    });
+    const listParameter = SsmParameterHelper.writeToStringListParameter(stack, 'FlatList', {
+      parameterName: 'flatList',
+      stringListValue: ['a', 'b'],
+    });
+
+    new cdk.CfnOutput(reader, 'StringArn', { value: stringParameter.parameterArn });
+    new cdk.CfnOutput(reader, 'ListArn', { value: listParameter.parameterArn });
+
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: 'flatName',
+      Type: 'String',
+      Value: 'value',
+    });
+    template.hasResourceProperties('AWS::SSM::Parameter', {
+      Name: 'flatList',
+      Type: 'StringList',
+      Value: 'a,b',
+    });
+
+    const readerTemplate = JSON.stringify(Template.fromStack(reader).toJSON());
+    expect(readerTemplate).toContain('parameter/flatName');
+    expect(readerTemplate).toContain('parameter/flatList');
+  });
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {

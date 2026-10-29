@@ -5,7 +5,10 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
  */
 export interface WriteToStringParameterProps {
   /**
-   * Parameter name (for example, `/my/app/value`).
+   * Concrete simple name (for example, `flatName`) or fully qualified path (for example, `/my/app/value`).
+   *
+   * A simple name is stored with `simpleName: true`.
+   * The name must not be empty, contain whitespace, or include an empty path segment.
    */
   readonly parameterName: string;
   /**
@@ -31,7 +34,10 @@ export interface WriteToStringParameterProps {
  */
 export interface WriteToStringListParameterProps {
   /**
-   * Parameter name (for example, `/my/app/list`).
+   * Concrete simple name (for example, `flatList`) or fully qualified path (for example, `/my/app/list`).
+   *
+   * A simple name is stored with `simpleName: true`.
+   * The name must not be empty, contain whitespace, or include an empty path segment.
    */
   readonly parameterName: string;
   /**
