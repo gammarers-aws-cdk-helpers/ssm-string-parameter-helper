@@ -22,6 +22,9 @@ const PARAMETER_NAME_CHARACTERS = /^[A-Za-z0-9._/-]+$/;
  * Apply the managed-by tag, then caller tags.
  *
  * Caller tags come second so a matching key replaces the default.
+ *
+ * @param resource Parameter construct to tag.
+ * @param tags Optional caller tags applied after the managed-by tag.
  */
 const applyParameterTags = (resource: Construct, tags?: Record<string, string>): void => {
   Tags.of(resource).add(MANAGED_BY_TAG_KEY, MANAGED_BY_TAG_VALUE);
@@ -105,6 +108,9 @@ export const resolveWritableParameterName = (parameterName: string): WritablePar
  * Report a path whose segments are not all present.
  *
  * `/`, a trailing `/`, and `//` each leave an empty segment.
+ *
+ * @param parameterName Fully qualified parameter name.
+ * @returns `true` when the path has an empty segment.
  */
 const hasEmptyPathSegment = (parameterName: string): boolean => {
   if (parameterName.endsWith('/')) {
@@ -143,7 +149,7 @@ const assertWritableStringListValue = (values: string[]): void => {
 };
 
 /**
- * Properties for `SsmParameterHelper.writeToStringParameter`.
+ * Properties for {@link SsmParameterHelper.writeToStringParameter}.
  */
 export interface WriteToStringParameterProps {
   /**
@@ -176,7 +182,7 @@ export interface WriteToStringParameterProps {
 }
 
 /**
- * Properties for `SsmParameterHelper.writeToStringListParameter`.
+ * Properties for {@link SsmParameterHelper.writeToStringListParameter}.
  */
 export interface WriteToStringListParameterProps {
   /**
@@ -244,7 +250,7 @@ export class SsmParameterHelper {
    * If `type` is provided, the Parameter Store value type is validated at deploy time.
    *
    * If you need a fixed-length `string[]` at CloudFormation level, combine this
-   * with `SsmParameterHelper.splitListTokenToStrings`.
+   * with {@link SsmParameterHelper.splitListTokenToStrings}.
    *
    * @param scope Construct scope used to bind the lookup token.
    * @param parameterName Parameter name (for example, `/my/app/list`).
@@ -346,7 +352,7 @@ export class SsmParameterHelper {
    * - **length (N)** must be known at synth time.
    * - Intended to be used with the return value of
    *   `StringListParameter.valueForTypedListParameter()` (for example via
-   *   `SsmParameterHelper.readFromStringListParameter`).
+   *   {@link SsmParameterHelper.readFromStringListParameter}).
    *
    * @param listToken A token list returned from an SSM StringList lookup.
    * @param length Fixed output length \(N\) at CloudFormation level.
